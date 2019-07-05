@@ -34,7 +34,7 @@ class MainActivity : AppCompatActivity(), OnClickDateCalendar {
                     android.R.color.black
                 )
             )
-            .rangeMax(7, HorizontalCalendar.TimeMeasure.DAY)
+            .rangeMax(3, HorizontalCalendar.TimeMeasure.DAY)
             .daysInScreen(7)
             .onClickDay(this)
             .setGravityDaySelected(HorizontalCalendar.GRAVITY.CENTER)
@@ -43,6 +43,13 @@ class MainActivity : AppCompatActivity(), OnClickDateCalendar {
         //init today date
         setDate(Calendar.getInstance().time)
 
+        configOnClicks()
+
+    }
+
+    private fun configOnClicks() {
+        buttonPreviousWeek.setOnClickListener { horizontalCalendar.previousWeek() }
+        buttonNextWeek.setOnClickListener { horizontalCalendar.nextWeek() }
     }
 
     private fun setDate(date: Date) {
@@ -56,7 +63,6 @@ class MainActivity : AppCompatActivity(), OnClickDateCalendar {
         isSelected: Boolean,
         isDayPast: Boolean
     ) {
-        horizontalCalendar.moveCalendarOnClick(position)
         setDate(date)
     }
 

@@ -5,8 +5,9 @@ import android.content.Context
 import android.graphics.Point
 import android.os.Handler
 import android.support.annotation.ColorRes
-import android.support.v7.widget.GridLayoutManager
+import android.support.v7.widget.*
 import android.util.Log
+import android.view.View
 import com.rudo.horizontalcalendar.adapters.CalendarAdapter
 import com.rudo.horizontalcalendar.data.Constants
 import com.rudo.horizontalcalendar.data.Style
@@ -18,14 +19,21 @@ import kotlin.collections.ArrayList
 
 class HorizontalCalendar(private val build: Build) {
 
+    private var clickWeek: Boolean = false
     private var view: HorizontalCalendarView
     var totalDays: Int? = null
     private lateinit var listDays: ArrayList<Day>
     private lateinit var lastDaySelected: Day
+    private lateinit var daySelected: Day
+    var limitLeft = -3
+    var limitRight = 3
 
     init {
 
         view = build.calendarView
+        view.isNestedScrollingEnabled = false
+        /*val snapHelper = PagerSnapHelper()
+        snapHelper.attachToRecyclerView(view)*/
         view.layoutManager = GridLayoutManager(build.context, 1, GridLayoutManager.HORIZONTAL, false)
 
         //divide screen in x number of items
@@ -40,7 +48,16 @@ class HorizontalCalendar(private val build: Build) {
         ) { position: Int, date: Date, b: Boolean, b1: Boolean, b2: Boolean ->
 
             build.onClick?.let {
-                it.onClickDate(position, date, b, b1, b2)
+
+                if (!clickWeek) {
+                    daySelected = listDays[position]
+                } else {
+                    clickWeek = false
+                }
+
+                createMoreDays(position)
+                moveCalendarOnClick(position)
+                it.onClickDate(position, daySelected.date, b, b1, b2)
             }
             view.adapter!!.notifyDataSetChanged()
             //refreshAdapter(date)
@@ -71,11 +88,66 @@ class HorizontalCalendar(private val build: Build) {
             }
 
             Handler().post {
-                view.layoutManager!!.scrollToPosition(positionCenter.toInt())
+                //                view.layoutManager!!.scrollToPosition(positionCenter.toInt())
             }
         }
 
 
+    }
+
+    private fun createMoreDays(position: Int) {
+
+        val calendar = Calendar.getInstance()
+        calendar.time = daySelected.date
+        var day: Day? = null
+        val listAux = ArrayList<Day>()
+
+        val middleScreen = Math.floor((build.daysInScreen / 2).toDouble()).toInt()
+
+        for (i in 0..totalDays!!) {
+
+            if (i < middleScreen) {
+                calendar.add(Calendar.DATE, -1)
+                day = Day(calendar.time, false, isDone = true, isExtraRange = false)
+            }
+
+            if (i == middleScreen) {
+                calendar.time = daySelected.date
+                day = Day(calendar.time, true, isDone = false, isExtraRange = false)
+
+            }
+
+            if (i > middleScreen) {
+                calendar.add(Calendar.DATE, 1)
+                day = Day(calendar.time, false, isDone = false, isExtraRange = false)
+            }
+
+            listAux.add(day!!)
+
+        }
+
+        val list = listAux.sortedWith(compareBy { it.date })
+
+        listDays.clear()
+        listDays.addAll(list)
+
+
+    }
+
+    private fun getRangeOfDays(): Int {
+        return when (build.gravityDaySelected) {
+
+            GRAVITY.RIGHT -> {
+                Math.floor((build.daysInScreen).toDouble()).toInt()
+            }
+
+            GRAVITY.CENTER -> {
+                Math.floor((build.daysInScreen / 2).toDouble()).toInt()
+            }
+            else -> {
+                build.daysInScreen
+            }
+        }
     }
 
     /*fun refreshAdapter(dateSelected : Date){
@@ -105,7 +177,7 @@ class HorizontalCalendar(private val build: Build) {
 
     fun moveCalendarOnClick(position: Int) {
 
-        val daySelected = listDays[position]
+//        val daySelected = listDays[position]
 
         val middleDays = position.toDouble()
         Log.d("prueba", "mitad days: " + middleDays)
@@ -117,11 +189,6 @@ class HorizontalCalendar(private val build: Build) {
                 val rightScreen = Math.floor((build.daysInScreen).toDouble())
                 Log.d("prueba", "rigthScreen screen: " + rightScreen)
                 positionCenter = (middleDays - rightScreen) + 1
-                /*if (daySelected.date.before(lastDaySelected.date)) {
-                    positionCenter = midleDays - rigthScreen
-                } else {
-                    positionCenter = midleDays + rigthScreen
-                }*/
             }
 
             GRAVITY.CENTER -> {
@@ -139,7 +206,7 @@ class HorizontalCalendar(private val build: Build) {
         }
 
         Handler().post {
-            view.layoutManager!!.scrollToPosition(positionCenter.toInt())
+            //            view.layoutManager!!.scrollToPosition(positionCenter.toInt())
         }
 
         lastDaySelected = listDays[position]
@@ -159,7 +226,7 @@ class HorizontalCalendar(private val build: Build) {
         val calendarNow = Calendar.getInstance()
 
         lastDaySelected = Day(calendarNow.time, true, isDone = false, isExtraRange = false)
-
+        daySelected = Day(calendarNow.time, true, isDone = false, isExtraRange = false)
 
         dateSelect?.let {
             calendarNow.time = dateSelect
@@ -234,6 +301,36 @@ class HorizontalCalendar(private val build: Build) {
         }
 
         return listDays
+    }
+
+    fun previousWeek() {
+
+        clickWeek = true
+
+        //TODO set previous week in calendar
+        val calendarSelected = Calendar.getInstance()
+        calendarSelected.time = daySelected.date
+        calendarSelected.add(Calendar.DATE, -7)
+
+        daySelected = Day(calendarSelected.time, true, isDone = false, isExtraRange = false)
+        val middleScreen = Math.floor((build.daysInScreen / 2).toDouble()).toInt()
+
+        view.findViewHolderForAdapterPosition(middleScreen)!!.itemView.performClick()
+
+    }
+
+    fun nextWeek() {
+        //TODO set next week in calendar
+        clickWeek = true
+
+        val calendarSelected = Calendar.getInstance()
+        calendarSelected.time = daySelected.date
+        calendarSelected.add(Calendar.DATE, 7)
+
+        daySelected = Day(calendarSelected.time, true, isDone = false, isExtraRange = false)
+        val middleScreen = Math.floor((build.daysInScreen / 2).toDouble()).toInt()
+
+        view.findViewHolderForAdapterPosition(middleScreen)!!.itemView.performClick()
     }
 
 
