@@ -19,6 +19,8 @@ import kotlin.collections.ArrayList
 
 class HorizontalCalendar(private val build: Build) {
 
+    private var scrollRight: Boolean = false
+    private var isScrollTo: Boolean = false
     private var clickWeek: Boolean = false
     private var view: HorizontalCalendarView
     var totalDays: Int? = null
@@ -55,7 +57,7 @@ class HorizontalCalendar(private val build: Build) {
                     clickWeek = false
                 }
 
-                createMoreDays(position)
+//                createMoreDays()
                 moveCalendarOnClick(position)
                 it.onClickDate(position, daySelected.date, b, b1, b2)
             }
@@ -88,14 +90,56 @@ class HorizontalCalendar(private val build: Build) {
             }
 
             Handler().post {
-                //                view.layoutManager!!.scrollToPosition(positionCenter.toInt())
+                isScrollTo = true
+                view.layoutManager!!.scrollToPosition(positionCenter.toInt())
             }
         }
+
+        view.addOnScrollListener(getScrollListener())
 
 
     }
 
-    private fun createMoreDays(position: Int) {
+    private fun getScrollListener(): RecyclerView.OnScrollListener {
+        val scrollListener = object : RecyclerView.OnScrollListener() {
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+
+                when (newState) {
+                    RecyclerView.SCROLL_STATE_IDLE -> {
+                        Log.e("SCROLL", "Finish scroll - total items: " + listDays.size)
+                        view.adapter!!.notifyDataSetChanged()
+                    }
+
+                    RecyclerView.SCROLL_STATE_DRAGGING -> {
+                        Log.e("SCROLL", "Is scrolling")
+                    }
+                }
+            }
+
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+
+                if (!isScrollTo) {
+                    if (dx > 0) { //scroll right
+                        Log.e("SCROLL", "Scroll right")
+                        scrollRight = true
+                        loadMoreDays(true)
+                    } else if (dx < 0) { //scroll left
+                        Log.e("SCROLL", "Scroll left")
+                        scrollRight = false
+                        loadMoreDays(false)
+                    }
+                } else {
+                    isScrollTo = false
+                }
+
+            }
+        }
+        return scrollListener
+    }
+
+    private fun createMoreDays() {
 
         val calendar = Calendar.getInstance()
         calendar.time = daySelected.date
@@ -130,6 +174,44 @@ class HorizontalCalendar(private val build: Build) {
 
         listDays.clear()
         listDays.addAll(list)
+
+
+    }
+
+    private fun loadMoreDays(scrollRight: Boolean) {
+
+        val lastPos = listDays.size - 1
+        val calendar = Calendar.getInstance()
+        if (scrollRight) {
+            calendar.time = listDays[lastPos].date
+        } else {
+            calendar.time = listDays[0].date
+        }
+//        calendar.time = daySelected.date
+        var day: Day? = null
+        val listAux = ArrayList<Day>()
+        listAux.addAll(listDays)
+
+        val middleScreen = Math.floor((build.daysInScreen / 2).toDouble()).toInt()
+
+        if (!scrollRight) {
+            calendar.add(Calendar.DATE, -1)
+            day = Day(calendar.time, false, isDone = true, isExtraRange = false)
+            listDays.add(0, day)
+            view.post {
+                view.adapter!!.notifyItemInserted(0)
+            }
+        }
+
+        if (scrollRight) {
+            calendar.add(Calendar.DATE, 1)
+            day = Day(calendar.time, false, isDone = false, isExtraRange = false)
+            listDays.add(day)
+            view.post {
+                view.adapter!!.notifyItemInserted(lastPos)
+            }
+
+        }
 
 
     }
@@ -206,7 +288,8 @@ class HorizontalCalendar(private val build: Build) {
         }
 
         Handler().post {
-            //            view.layoutManager!!.scrollToPosition(positionCenter.toInt())
+            isScrollTo = true
+            view.layoutManager!!.scrollToPosition(positionCenter.toInt())
         }
 
         lastDaySelected = listDays[position]
@@ -283,6 +366,11 @@ class HorizontalCalendar(private val build: Build) {
 
             //check if it is selected
             var isSelected = false
+
+            if (calendarRange.isSameDay(Calendar.getInstance())) {
+                isSelected = true
+            }
+
             build.selectedDays?.let {
 
                 it.onEach {
@@ -331,6 +419,33 @@ class HorizontalCalendar(private val build: Build) {
         val middleScreen = Math.floor((build.daysInScreen / 2).toDouble()).toInt()
 
         view.findViewHolderForAdapterPosition(middleScreen)!!.itemView.performClick()
+    }
+
+    fun showToday() {
+        var position = 0
+        for (i in 0 until listDays.size) {
+            val calendar = Calendar.getInstance()
+            calendar.time = listDays[i].date
+            if (calendar.isSameDay(Calendar.getInstance())) {
+                position = i
+            }
+        }
+
+        val middleDays = position.toDouble()
+        Log.d("prueba", "mitad days: " + middleDays)
+        var positionCenter = middleDays
+        val middleScreen = Math.floor((build.daysInScreen / 2).toDouble())
+        Log.d("prueba", "mitad screen: " + middleScreen)
+        positionCenter = if (scrollRight) {
+            middleDays - middleScreen
+        } else {
+            middleDays + middleScreen
+        }
+
+        Handler().post {
+            isScrollTo = true
+            view.layoutManager!!.scrollToPosition(positionCenter.toInt())
+        }
     }
 
 

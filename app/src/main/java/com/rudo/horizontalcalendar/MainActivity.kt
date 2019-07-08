@@ -2,6 +2,8 @@ package com.rudo.horizontalcalendar
 
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
 import com.rudo.horizontalcalendar.data.Style
 import com.rudo.horizontalcalendar.interfaces.OnClickDateCalendar
 import com.rudo.horizontalcalendar.utils.Utils
@@ -34,7 +36,7 @@ class MainActivity : AppCompatActivity(), OnClickDateCalendar {
                     android.R.color.black
                 )
             )
-            .rangeMax(3, HorizontalCalendar.TimeMeasure.DAY)
+            .rangeMax(7, HorizontalCalendar.TimeMeasure.DAY)
             .daysInScreen(7)
             .onClickDay(this)
             .setGravityDaySelected(HorizontalCalendar.GRAVITY.CENTER)
@@ -43,14 +45,32 @@ class MainActivity : AppCompatActivity(), OnClickDateCalendar {
         //init today date
         setDate(Calendar.getInstance().time)
 
-        configOnClicks()
+//        configOnClicks()
 
     }
 
-    private fun configOnClicks() {
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem) = when (item.itemId) {
+        R.id.showToday -> {
+            horizontalCalendar.showToday()
+            true
+        }
+        else -> {
+            // If we got here, the user's action was not recognized.
+            // Invoke the superclass to handle it.
+            super.onOptionsItemSelected(item)
+        }
+    }
+
+    /*private fun configOnClicks() {
         buttonPreviousWeek.setOnClickListener { horizontalCalendar.previousWeek() }
         buttonNextWeek.setOnClickListener { horizontalCalendar.nextWeek() }
-    }
+    }*/
 
     private fun setDate(date: Date) {
         textDay.text = Utils.getDateFormatted(date, "EEEE, d 'de' MMMM 'de' yyyy")

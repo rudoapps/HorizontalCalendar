@@ -64,8 +64,6 @@ class CalendarAdapter(
 
             txtNumDay.text = calendar.get(Calendar.DAY_OF_MONTH).toString()
 
-
-
             if (day.isDone) { //check if the day is a day before today
                 val bgShape = backDay.background as GradientDrawable
                 bgShape.setColor(ContextCompat.getColor(context, style.basicStyle.colorDaysBefore))
@@ -79,6 +77,19 @@ class CalendarAdapter(
                 style.textStyle?.let {
                     txtNumDay.setTextColor(ContextCompat.getColor(context, it.colorDaysAfter))
                 }
+            }
+
+
+            if (calendar.isSameDay(Calendar.getInstance())) { //is today
+                viewSelected.visibility = View.VISIBLE
+
+                val bgShape = backDay.background as GradientDrawable
+                bgShape.setColor(ContextCompat.getColor(context, style.basicStyle.colorDayToday))
+                style.textStyle?.let {
+                    txtNumDay.setTextColor(ContextCompat.getColor(context, it.colorDayToday))
+                }
+            } else {
+                viewSelected.visibility = View.INVISIBLE
             }
 
 
@@ -106,27 +117,6 @@ class CalendarAdapter(
                     txtNumDay.setTextColor(ContextCompat.getColor(context, it.textColorRange))
                 }
 
-            }
-
-            if (calendar.isSameDay(Calendar.getInstance())) { //is today
-                viewSelected.visibility = View.VISIBLE
-
-                val bgShape = backDay.background as GradientDrawable
-                bgShape.setColor(ContextCompat.getColor(context, style.basicStyle.colorDayToday))
-                style.textStyle?.let {
-                    txtNumDay.setTextColor(ContextCompat.getColor(context, it.colorDayToday))
-                }
-
-            } else {
-                viewSelected.visibility = View.INVISIBLE
-            }
-
-            if (calendar.isSameDay(daySelected)) { //check if the day is a selected day
-                val bgShape = backDay.background as GradientDrawable
-                bgShape.setColor(ContextCompat.getColor(context, style.basicStyle.colorDaySelected))
-                style.textStyle?.let {
-                    txtNumDay.setTextColor(ContextCompat.getColor(context, it.colorDaySelected))
-                }
             }
 
             itemDay.setOnClickListener {
