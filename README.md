@@ -142,4 +142,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ```
 
-
+## Pendiente
+09/07/2019
+- Cuando el usuario desliza el calendario y selecciona un día, el día seleccionado no se centra en la pantalla a veces.
+- Cuando se selecciona la opción de volver al día actual, a veces, no se desliza correctamente.
